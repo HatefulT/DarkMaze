@@ -1,5 +1,7 @@
 var C, CTX, w, h;
 
+var minimapC, minimapCtx;
+
 window.onload = function() {
   C = document.getElementById('canvas');
   CTX = C.getContext('2d');
@@ -8,15 +10,31 @@ window.onload = function() {
   lastTime = Date.now();
 
   menu = document.getElementById('start-menu');
+
+  minimapC = document.getElementById('minimap');
+  minimapC.width = (mapW+1)*cellWidth/10;
+  minimapC.height = (mapH)*cellWidth/10;
+  minimapCtx = minimapC.getContext('2d');
 }
 
+var mapW = 15,
+    mapH = 15,
+    cellWidth = 100;
 var initGame = function() {
-  player = new Player(10, 10);
-  walls = CreateMaze(100, 100, 0, 0, 100);
-  //walls.push(new Wall(100, 100, 100, 100));
-
+  player = new Player(cellWidth/2, cellWidth/2);
+  walls = CreateMaze(mapW, mapH, 0, 0, cellWidth);
   camera.x = w/2;
   camera.y = h*.9;
+}
+
+var redrawMinimap = function() {
+  minimapCtx.clearRect(0, 0, minimapC.width, minimapC.height);
+  minimapCtx.fillStyle = colors.white;
+  walls.forEach(function(wall) {
+    minimapCtx.fillRect(wall.x/10, wall.y/10, wall.w/10, wall.h/10);
+  });
+  minimapCtx.fillStyle = colors.gray;
+  minimapCtx.fillRect(player.x/10-5, player.y/10-5, 10, 10);
 }
 
 var menu;
@@ -30,6 +48,10 @@ var startGame = function() {
   requestAnimationFrame(loop);
 }
 
+
+var lastSpaceState = false,
+    lastMinimapRedrawTime = 0;
+
 var lastTime;
 var loop = function() {
   let time = Date.now();
@@ -39,6 +61,17 @@ var loop = function() {
   update(dt);
   render();
 
+  if(lastSpaceState != keys.space) {
+    lastSpaceState = keys.space;
+    if(keys.space)
+      minimapC.style.display = 'block';
+    else
+      minimapC.style.display = 'none';
+  }
+  if(lastSpaceState && lastTime - lastMinimapRedrawTime > 500) {
+    redrawMinimap();
+    lastMinimapRedrawTime = lastTime;
+  }
   requestAnimationFrame(loop);
 }
 
